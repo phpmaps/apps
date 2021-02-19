@@ -143,6 +143,16 @@
                 popup: true
             });
             IdentityManager.registerOAuthInfos([info]);
+
+
+            (async function () {
+                try {
+                    const cred = await IdentityManager.getCredential(arcgisDomain);
+                    console.log(JSON.stringify(cred, null, 2));
+                } catch (error) {
+                    console.log(JSON.stringify(error, null, 2));
+                }
+            })();
             // IdentityManager.enablePostMessageAuth(arcgisDomain);
 
             // let credential = null;
@@ -276,4 +286,5 @@
         </main>
     </div>
 </body>
+
 </html>
