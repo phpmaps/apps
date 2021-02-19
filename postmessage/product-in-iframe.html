@@ -1,0 +1,337 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Post Message Tests</title>
+    <style>
+        html,
+        body,
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            color: #595959;
+        }
+
+        button {
+            height: 40px;
+            background-color: transparent;
+            border-width: 0;
+            background: #444857;
+            color: #FFF;
+            border-radius: 2px;
+            padding: 10px;
+        }
+
+        button:hover {
+            background: #5a6074;
+        }
+
+        .side-panel>button {
+            margin: 10px 0px;
+        }
+
+        .side-panel>button:hover {
+            background: #000;
+        }
+
+        .active {
+            border: #FFF solid 1px;
+        }
+
+        .header {
+            width: 100%;
+            height: 60px;
+            display: flex;
+            position: fixed;
+            top: 0;
+            border-bottom: 1px solid rgba(0, 0, 0, .15);
+            z-index: 1000;
+            background: #1e1f26;
+            color: #FFF;
+            align-items: center;
+        }
+
+        .menu {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            width: 100%;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .account-control {
+            background-color: transparent;
+            border-width: 0;
+            padding-left: 46px;
+            padding-right: 32px;
+        }
+
+        .account-image {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .content {
+            flex: 1 0 auto;
+            padding-top: 60px;
+            background-color: #f8f9fa;
+            display: none;
+        }
+
+        .aynom {
+            flex: 1 0 auto;
+            padding-top: 60px;
+            background-color: #f8f9fa;
+        }
+
+        .inner {
+            display: flex;
+            height: 100%;
+        }
+
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            width: 340px;
+            background: #5a6074;
+            padding: 20px;
+            color: #FFF;
+        }
+
+        .main-panel {
+            width: 100%;
+        }
+
+        .footer {
+            flex-shrink: 0;
+        }
+
+        .viewer {
+            border: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.19/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.19/"></script>
+
+    <script>
+        require([
+            "esri/portal/Portal",
+            "esri/identity/OAuthInfo",
+            "esri/identity/IdentityManager",
+            "esri/portal/PortalQueryParams"
+        ], function (Portal, OAuthInfo, IdentityManager, PortalQueryParams) {
+
+            const arcgisDomain = "https://devext.arcgis.com";
+            const menu = document.querySelector('.menu');
+            const content = document.querySelector('#content');
+            const panel = document.querySelector(".side-panel");
+            const viewer = document.querySelector(".viewer");
+            const aynom = document.querySelector(".aynom");
+
+            const info = new OAuthInfo({
+                appId: "J7mmzSNzWAhGtbBw",
+                portalUrl: arcgisDomain,
+                // authNamespace: "portal_oauth_inline",
+                popup: true
+            });
+            IdentityManager.registerOAuthInfos([info]);
+            IdentityManager.enablePostMessageAuth(arcgisDomain);
+
+            let credential = null;
+
+            const createSignInBtn = () => {
+                const signinBtn = document.createElement("button");
+                signinBtn.innerHTML = "Sign In";
+                signinBtn.onclick = (e, o) => {
+                    (async () => {
+                        if (!credential) {
+                            try {
+                                credential = await checkCurrentStatus();
+                            } catch (error) {
+                                credential = await fetchCredentials();
+                            }
+                        }
+                        // Remove Sign In and create a Sign out button, if the is a valid credential
+                        if (credential) {
+                            menu.removeChild(signinBtn);
+                            createSignOutBtn();
+                            aynom.style.display = "none";
+                            content.style.display = "block";
+                        }
+                    })();
+                };
+                menu.appendChild(signinBtn);
+            }
+
+            const createSignOutBtn = () => {
+                console.log(credential);
+                const signoutBtn = document.createElement("button");
+                signoutBtn.innerHTML = "ArcGIS Sign Out";
+                signoutBtn.onclick = (e, o) => {
+                    (async () => {
+                        while (content.firstChild) {
+                            content.removeChild(content.firstChild);
+                        }
+                        IdentityManager.destroyCredentials();
+                        menu.removeChild(signoutBtn);
+                        createSignInBtn();
+                    })();
+                };
+                menu.appendChild(signoutBtn);
+                const accountInfo = document.createElement("span");
+                accountInfo.className = "account-control";
+                accountInfo.innerHTML = credential.userId;
+
+                // const accountImg = document.createElement("img");
+                // accountImg.src = "https://cdn-a.arcgis.com/cdn/199C3DC/js/arcgisonline/css/images/no-user-thumb.jpg";
+                // accountImg.className = "account-image";
+                // accountInfo.appendChild(accountImg);
+
+                // const accountName = document.createElement("span");
+                // accountName.innerHTML = "Doug Carroll";
+                // accountInfo.appendChild(accountName);
+
+                menu.appendChild(accountInfo);
+            }
+
+            const checkCurrentStatus = () => IdentityManager.checkSignInStatus(`${arcgisDomain}/sharing`);
+
+            const getBtnText = (cred) => {
+                return cred ? authButton.innerHTML = "Sign out" : authButton.innerHTML = "Sign in";
+            }
+
+            const signInCreateViewer = async () => {
+
+                var portal = new Portal({
+                    url: arcgisDomain
+                });
+
+                portal.authMode = "immediate";
+                // Once loaded, user is signed in
+                await portal.load();
+
+                if (!portal.user.username) {
+                    alert("Bad sign-in.  No username.");
+                    return;
+                }
+
+                var values = [{
+                        appName: "Beta Map Viewer",
+                        url: ""
+                    },
+                    {
+                        appName: "Dashboard",
+                        url: ""
+                    }
+                ];
+
+                var select = document.createElement("select");
+                select.name = "apps";
+                select.id = "apps";
+
+                select.onchange = (e, o) => {
+                    console.log(e);
+                    console.log(o);
+                };
+
+                for (const v of values) {
+                    var option = document.createElement("option");
+                    option.value = v.url;
+                    option.text = v.url;
+                    select.appendChild(option);
+                }
+                var label = document.createElement("label");
+                label.innerHTML = `Hey ${portal.user.username}, select an app... :`
+                label.htmlFor = "apps";
+                content.appendChild(label).appendChild(select);
+
+            };
+
+            const fetchCredentials = async () => {
+                credential = await IdentityManager.getCredential(`${arcgisDomain}/sharing`, {
+                    error: null,
+                    oAuthPopupConfirmation: false,
+                    token: null
+                });
+                return credential;
+            };
+
+            const createViewerBtns = () => {
+
+                const apps = [{
+                    name: "Beta Map Viewer",
+                    url: "https://insights.mapsdevext.arcgis.com/apps/mapviewer/index.html?webmap=bf9f9b1783104081b0a3f1ff0ada7e5f"
+                }, {
+                    name: "Scene Viewer",
+                    url: "https://insights.mapsdevext.arcgis.com/home/webscene/viewer.html?webscene=37d1b6ad9290413f8344cc2e315a7eca"
+                }, {
+                    name: "StoryMap",
+                    url: "https://storymapsdev.arcgis.com/stories/96dba81380764c68b7af5d9f00d5c6eb"
+                }, {
+                    name: "Dashboard",
+                    url: "https://insights.mapsdevext.arcgis.com/apps/dashboards/e6f8c5de91f2487b981fe3647d7da055"
+                }, {
+                    name: "Survey123",
+                    url: "https://survey123dev.arcgis.com/share/061c91546be743219528533bc15e7c59"
+                }];
+
+                for (let i = 0; i < apps.length; i++) {
+                    const viewerBtn = document.createElement("button");
+                    viewerBtn.innerHTML = apps[i].name;
+                    viewerBtn.onclick = (e) => {
+                        (async () => {
+                            let url = apps[i].url;
+                            if (url.includes("?")) {
+                                url =
+                                    `${url}&arcgis-auth-origin=${encodeURIComponent(window.location.origin)}&arcgis-auth-portal=${encodeURIComponent(arcgisDomain)}`;
+                            } else {
+                                url =
+                                    `${url}?arcgis-auth-origin=${encodeURIComponent(window.location.origin)}&arcgis-auth-portal=${encodeURIComponent(arcgisDomain)}`;
+                            }
+                            viewer.src = url;
+                        })();
+                    };
+                    panel.appendChild(viewerBtn);
+
+                }
+            };
+
+            createSignInBtn();
+            //createViewerBtns();
+        });
+    </script>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <div class="menu"></div>
+        </div>
+        <main id="content" class="content">
+            <div class="inner">
+                <iframe class="viewer"
+                        src="https://phpmaps.github.io/apps/postmessage/frame.html"
+                        frameBorder="0"></iframe>Î
+            </div>
+
+        </main>
+        <footer class="footer">Footer</footer>
+    </div>
+
+    <iframe class="viewer"
+    src="https://phpmaps.github.io/apps/postmessage/"
+    frameBorder="0"></iframe>
+</body>
+
+</html>
