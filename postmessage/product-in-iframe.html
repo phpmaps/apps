@@ -83,7 +83,6 @@
             flex: 1 0 auto;
             padding-top: 60px;
             background-color: #f8f9fa;
-            display: none;
         }
 
         .aynom {
@@ -118,6 +117,7 @@
             border: 0;
             width: 100%;
             height: 100%;
+            display:block;
         }
     </style>
 
@@ -166,8 +166,6 @@
                         if (credential) {
                             menu.removeChild(signinBtn);
                             createSignOutBtn();
-                            aynom.style.display = "none";
-                            content.style.display = "block";
                         }
                     })();
                 };
@@ -320,9 +318,7 @@
         </div>
         <main id="content" class="content">
             <div class="inner">
-                <iframe class="viewer"
-                        src="https://phpmaps.github.io/apps/postmessage/frame.html"
-                        frameBorder="0"></iframe>Î
+                <iframe class="viewer" src="https://phpmaps.github.io/apps/postmessage/frame.html" frameBorder="0"></iframe>
             </div>
 
         </main>
