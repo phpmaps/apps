@@ -137,12 +137,12 @@
             const viewer = document.querySelector(".viewer");
             //const aynom = document.querySelector(".aynom");
 
-            // const info = new OAuthInfo({
-            //     appId: "J7mmzSNzWAhGtbBw",
-            //     portalUrl: arcgisDomain,
-            //     popup: true
-            // });
-            // IdentityManager.registerOAuthInfos([info]);
+            const info = new OAuthInfo({
+                appId: "J7mmzSNzWAhGtbBw",
+                portalUrl: arcgisDomain,
+                popup: true
+            });
+            IdentityManager.registerOAuthInfos([info]);
             // IdentityManager.enablePostMessageAuth(arcgisDomain);
 
             // let credential = null;
